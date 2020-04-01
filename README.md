@@ -11,3 +11,7 @@ The script does two things:
 * create a crontab to execute the script, e.g.: "16 9      2,15 * *      /usr/local/bin/cleanup_friendica.sh" to execute the script every two weeks
 * for the first 2 runs you should have the mail text the same and keep the deleting of the user commented out (line 54 in initial commit). After the first 2 runs you should change the first mail text to send out a mail that the account has been deleted because of inactivity and not reacting to the prior sent mails. 
 * change the variables at the begin of the script to your site settings. 
+
+# Other useful tips
+* you can change the mail command from `-b ${siteadmin} -- ${usermail}` to `-- ${siteadmin}` and comment out all lines with bin/console user delete statement for testing runs
+* before putting this script into production you may want to inform your users via the notify_all addon of the upcoming changes/deletions. 
