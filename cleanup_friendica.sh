@@ -20,7 +20,7 @@ done
 
 # find & notify users that didn't logged in >6 months and send mail to log in again
 for u in $( ${friendicapath}/bin/console user list active -c 10000 | grep -v '.*---.*' | sed 's/|/;/g' | tr  -s "\ " | sed 's/^;\ //g' | sed 's/\ ;\ /;/g' | sed 's/\ /_/g' | tail -n +2 ); do 
-	r=$(echo "${u}" | awk -F ";" '{print $1}')
+	username=$(echo "${u}" | awk -F ";" '{print $1}')
 	dispname=$(echo "${u}" | awk -F ";" '{print $2}')
 	profileurl=$(echo "${u}"| awk -F ";" '{print $3}')
 	usermail=$(echo "${u}" | awk -F ";" '{print $4}')
