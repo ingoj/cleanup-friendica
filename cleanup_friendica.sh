@@ -9,6 +9,7 @@
 #siteurl="https://domain.tld/"
 #siteadmin="admin@domain.tld"
 #sitefrom="no-reply@domain.tld"
+#protectedusers="admin1 admin2 admin3"
 
 source /usr/local/etc/cleanup_friendica.conf
 
@@ -19,8 +20,13 @@ cd ${friendicapath} || exit 0
 # filtering for "weeks" will result in accounts with 2 weeks old accounts, 
 # filter for just "week" will do the same after 1 week.
 # same should apply to "month" and "months", but untested.
-for u in $( ${friendicapath}/bin/console user list active -c 10000 | grep 'never.*never' | grep weeks | awk '{print $2}') ; do 
-	${friendicapath}/bin/console user delete "${u}" -q
+for username in $( ${friendicapath}/bin/console user list active -c 10000 | grep 'never.*never' | grep weeks | awk '{print $2}') ; do 
+	# if username is a protected user do nothing, else delete user
+	if [[ "${protectedusers}" == *"${username}"* ]]; then
+		:
+	else
+		${friendicapath}/bin/console user delete "${username}" -q
+	fi
 done
 
 # find & notify users that didn't logged in >6 months and send mail to log in again
@@ -56,7 +62,12 @@ your ${site} admins
     		
 EOF
 ) | sed 's/_/\ /g' | /usr/bin/mail -s "The Fediverse misses you, ${username}!" -r "${sitefrom}" -b "$siteadmin" -- "${usermail}"
+		# if username is a protected user do nothing, else delete user
+		if [[ "${protectedusers}" == *"${username}"* ]]; then
+			:
+		else
 			# ${friendicapath}/bin/console user delete "${u}" -q
+		fi
     	elif [ ${num_months} -eq 6 ]; then 
     		# mail the user and ask to re-login
     		( cat <<EOF  
