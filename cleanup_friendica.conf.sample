@@ -1,0 +1,5 @@
+friendicapath="/var/www/net/nerdica.net/friendica"
+site="SITE"
+siteurl="https://domain.tld/"
+siteadmin="admin@domain.tld"
+sitefrom="no-reply@domain.tld"
