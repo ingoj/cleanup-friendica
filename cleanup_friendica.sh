@@ -2,11 +2,16 @@
 
 # set the following variables accordingly to your site
 # the admin will get a notification mail in BCC 
-friendicapath="/var/www/net/nerdica.net/friendica"
-site="SITE"
-siteurl="https://domain.tld/"
-siteadmin="admin@domain.tld"
-sitefrom="no-reply@domain.tld"
+
+# the following lines should be moved to a config file, eg. /usr/local/etc/cleanup_friendica.conf
+#friendicapath="/var/www/net/nerdica.net/friendica"
+#site="SITE"
+#siteurl="https://domain.tld/"
+#siteadmin="admin@domain.tld"
+#sitefrom="no-reply@domain.tld"
+
+source /usr/local/etc/cleanup_friendica.conf
+
 
 cd ${friendicapath} || exit 0
 
