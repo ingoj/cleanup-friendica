@@ -1,5 +1,6 @@
 #!/bin/sh
 
+set -f
 # set the following variables accordingly to your site
 # the admin will get a notification mail in BCC 
 
@@ -11,7 +12,7 @@
 #sitefrom="no-reply@domain.tld"
 #protectedusers="admin1 admin2 admin3"
 
-source /usr/local/etc/cleanup_friendica.conf
+. /usr/local/etc/cleanup_friendica.conf
 
 
 cd ${friendicapath} || exit 0
@@ -22,10 +23,17 @@ cd ${friendicapath} || exit 0
 # same should apply to "month" and "months", but untested.
 for username in $( ${friendicapath}/bin/console user list active -c 10000 | grep 'never.*never' | grep weeks | awk '{print $2}') ; do 
 	# if username is a protected user do nothing, else delete user
-	if [[ "${protectedusers}" == *"${username}"* ]]; then
-		:
-	else
-		${friendicapath}/bin/console user delete "${username}" -q
+	if [ -n "${protectedusers}" ]; then
+		pcheck=0
+		for s in $(echo ${protectedusers}) ; do
+			if [ "${s}" = "${username}" ]; then
+				pcheck=1
+			fi
+		done
+		if [ ${pcheck} -eq 0 ]; then
+			#echo "Delete user ${username}"
+			${friendicapath}/bin/console user delete "${username}" -q
+		fi
 	fi
 done
 
@@ -63,10 +71,17 @@ your ${site} admins
 EOF
 ) | sed 's/_/\ /g' | /usr/bin/mail -s "The Fediverse misses you, ${username}!" -r "${sitefrom}" -b "$siteadmin" -- "${usermail}"
 		# if username is a protected user do nothing, else delete user
-		if [[ "${protectedusers}" == *"${username}"* ]]; then
-			:
-		else
-			# ${friendicapath}/bin/console user delete "${u}" -q
+		if [ -n "${protectedusers}" ]; then
+			pcheck=0
+			for s in $(echo ${protectedusers}) ; do
+				if [ "${s}" = "${username}" ]; then
+					pcheck=1
+				fi
+			done
+			if [ ${pcheck} -eq 0 ]; then
+				echo "Delete user ${username}"
+				#${friendicapath}/bin/console user delete "${username}" -q
+			fi
 		fi
     	elif [ ${num_months} -eq 6 ]; then 
     		# mail the user and ask to re-login
