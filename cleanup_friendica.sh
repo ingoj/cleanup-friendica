@@ -18,6 +18,44 @@ set -f
 
 cd ${friendicapath} || exit 0
 
+# notify the user that s/he needs to re-login after 6 months to prevent account deletion
+notifyUser () {
+	( cat <<EOF  
+Dear ${dispname}, 
+
+you have registered on ${siteurl} ${registered} and last time you logged in was ${lastlogin}. 
+Your latest post - if any - was ${lastpost}.
+
+If you want to continue to keep your account on Nerdica then please log in at least every 6 months to keep your account alive. Otherwise we assume that you don't want to use it anymore and will cancel your account 7 months after your last login. 
+
+You can access your profile at ${profileurl} or you can cancel your account on your own when logged in at ${siteurl}removeme - however we would like to see you become an active user again and contribute to the Fediverse, but of course it's up to you.  
+
+Sincerely,
+your ${site} admins
+    		
+EOF
+	) | sed 's/_/\ /g' | /usr/bin/mail -s "The Fediverse misses you, ${username}!" -r "${sitefrom}" -- "${usermail}"
+	# add '-b "$siteadmin"' before the "--" above to receive BCC mails 
+}
+
+# notify user that the account has been deleted because of inactivity
+notifyUserDeletion () {
+	( cat <<EOF  
+Dear ${dispname}, 
+
+you have registered on ${siteurl} ${registered} and last time you logged in was ${lastlogin}. 
+Your latest post - if any - was ${lastpost}.
+
+Since you haven't reacted to the previous mails and didn't login again, your account including all your data has now been deleted. 
+
+Sincerely,
+your ${site} admins
+    		
+EOF
+	) | sed 's/_/\ /g' | /usr/bin/mail -s "Your account ${username} on ${site} has been be deleted!" -r "${sitefrom}" -- "${usermail}"
+	# add '-b "$siteadmin"' before the "--" above to receive BCC mails 
+}
+
 # delete users that never logged in and never posted content
 # filtering for "weeks" will result in accounts with 2 weeks old accounts, 
 # filter for just "week" will do the same after 1 week.
@@ -32,7 +70,7 @@ for username in $( ${friendicapath}/bin/console user list active -c 10000 | grep
 			fi
 		done
 		if [ ${pcheck} -eq 0 ]; then
-			#echo "Delete user ${username}"
+			echo "Delete unconfirmed user ${username}"
 			${friendicapath}/bin/console user delete "${username}" -q
 		fi
 	fi
@@ -47,58 +85,39 @@ for u in $( ${friendicapath}/bin/console user list active -c 10000 | grep -v '.*
 	registered=$(echo "${u}" | awk -F ";" '{print $5}')
 	lastlogin=$(echo "${u}" | awk -F ";" '{print $6}')
 	lastpost=$(echo "${u}" | awk -F ";" '{print $7}')
-    #echo "Userinfo: ${username},${dispname},${profileurl},${usermail},${registered},${lastlogin},${lastpost}"
-    res=$(echo "${lastlogin}" | grep '[6-9]_months.*')
+    res=$(echo "${lastlogin}" | grep -e'[6-9]\ months.*' -e '1[012]\ months.*' -e 'year')
     if [ -n "${res}" ]; then 
     	num_months=$(echo "${res}" | awk -F "_" '{ print $1}')
-    	#echo "months: ${num_months}"
-    	if [ ${num_months} -ge 7 ]; then 
+    	monthyear=$(echo "${res}" | awk -F "_" '{ print $2}' | sed -e 's/s//g')  # remove the "s" in months and years
+    	if [ "${monthyear}" = "month" ] ; then
+	    	if [ ${num_months} -ge 7 ] ; then
+	    		DELUSER=true
+	    	elif [ ${num_months} -eq 6 ]; then 
+    			# mail the user and ask to re-login
+		    	DELUSER=false
+    			notifyUser
+	    	fi
+	    elif [ "${monthyear}" = "year" ]; then
+	    	DELUSER=true
+	    fi
+	    if  [ "${DELUSER}" = "true" ]; then
     		# delete account when last login is older than 7 months and send mail about deletion
     		# you should copy & paste the text from 6 months for the first runs of this script
     		# and later change the text to a notification that the account has been deleted. 
-    		( cat <<EOF  
-Dear ${dispname}, 
-
-you have registered on ${siteurl} ${registered} and last time you logged in was ${lastlogin}. 
-Your latest post - if any - was ${lastpost}.
-
-Since you haven't reacted to the previous mails and didn't login again, your account including all your data has now been deleted. 
-
-Sincerely,
-your ${site} admins
-    		
-EOF
-) | sed 's/_/\ /g' | /usr/bin/mail -s "Your account ${username} on ${site} has been deleted!" -r "${sitefrom}" -b "$siteadmin" -- "${usermail}"
-		# if username is a protected user do nothing, else delete user
-		if [ -n "${protectedusers}" ]; then
-			pcheck=0
-			for s in $(echo ${protectedusers}) ; do
-				if [ "${s}" = "${username}" ]; then
-					pcheck=1
+			# if username is a protected user do nothing, else delete user
+			if [ -n "${protectedusers}" ]; then
+				pcheck=0
+				for s in $(echo ${protectedusers}) ; do
+					if [ "${s}" = "${username}" ]; then
+						pcheck=1
+					fi
+				done
+				if [ ${pcheck} -eq 0 ]; then
+					echo "Delete user ${username}"
+					${friendicapath}/bin/console user delete "${username}" -q
+					notifyUserDeletion
 				fi
-			done
-			if [ ${pcheck} -eq 0 ]; then
-				echo "Delete user ${username}"
-				${friendicapath}/bin/console user delete "${username}" -q
 			fi
 		fi
-    	elif [ ${num_months} -eq 6 ]; then 
-    		# mail the user and ask to re-login
-    		( cat <<EOF  
-Dear ${dispname}, 
-
-you have registered on ${siteurl} ${registered} and last time you logged in was ${lastlogin}. 
-Your latest post - if any - was ${lastpost}.
-
-If you want to continue to keep your account on Nerdica then please log in at least every 6 months to keep your account alive. Otherwise we assume that you don't want to use it anymore and will cancel your account 7 months after your last login. 
-
-You can access your profile at ${profileurl} or you can cancel your account on your own when logged in at ${siteurl}/removeme - however we would like to see you become an active user again and contribute to the Fediverse, but of course it's up to you.  
-
-Sincerely,
-your ${site} admins
-    		
-EOF
-) | sed 's/_/\ /g' | /usr/bin/mail -s "The Fediverse misses you, ${username}!" -r "${sitefrom}" -b "$siteadmin" -- "${usermail}"
-    	fi
     fi
 done
