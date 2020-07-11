@@ -71,7 +71,7 @@ for username in $( ${friendicapath}/bin/console user list active -c 10000 | grep
 		done
 		if [ ${pcheck} -eq 0 ]; then
 			echo "Delete unconfirmed user ${username}"
-			${friendicapath}/bin/console user delete "${username}" -q
+			${friendicapath}/bin/console user delete "${username}" -y
 		fi
 	fi
 done
@@ -114,7 +114,7 @@ for u in $( ${friendicapath}/bin/console user list active -c 10000 | grep -v '.*
 				done
 				if [ ${pcheck} -eq 0 ]; then
 					echo "Delete user ${username}"
-					${friendicapath}/bin/console user delete "${username}" -q
+					${friendicapath}/bin/console user delete "${username}" -y
 					notifyUserDeletion
 				fi
 			fi
