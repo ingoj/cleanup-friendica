@@ -85,7 +85,7 @@ for u in $( ${friendicapath}/bin/console user list active -c 10000 | grep -v '.*
 	registered=$(echo "${u}" | awk -F ";" '{print $5}')
 	lastlogin=$(echo "${u}" | awk -F ";" '{print $6}')
 	lastpost=$(echo "${u}" | awk -F ";" '{print $7}')
-    res=$(echo "${lastlogin}" | grep -e'[6-9]\ months.*' -e '1[012]\ months.*' -e 'year')
+    res=$(echo "${lastlogin}" | grep -E '[6-9].months.*|1[012].months.*|[1-9].year.*')
     if [ -n "${res}" ]; then 
     	num_months=$(echo "${res}" | awk -F "_" '{ print $1}')
     	monthyear=$(echo "${res}" | awk -F "_" '{ print $2}' | sed -e 's/s//g')  # remove the "s" in months and years
