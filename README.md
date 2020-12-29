@@ -13,5 +13,6 @@ The script does two things:
 * change the variables at the begin of the script to your site settings. 
 
 # Other useful tips
+* the script expects the output of `bin/console` to be in `LANG=en_US.UTF-8` or `en`
 * you can change the mail command from `-b ${siteadmin} -- ${usermail}` to `-- ${siteadmin}` and comment out all lines with `bin/console user delete` statement for testing runs
 * before putting this script into production you may want to inform your users via the notify_all addon of the upcoming changes/deletions. 
