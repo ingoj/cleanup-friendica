@@ -12,6 +12,11 @@ The script does two things:
 * for the first 2 runs you should have the mail text the same and keep the deleting of the user commented out (line 54 in initial commit). After the first 2 runs you should change the first mail text to send out a mail that the account has been deleted because of inactivity and not reacting to the prior sent mails. 
 * change the variables at the begin of the script to your site settings. 
 
+# Usage
+`Usage:
+ --dry-run      : make a dry-run, no deletion will be done, no mails are sent.
+ --dowhatimean  : add this option if you really want to delete users.`
+
 # Other useful tips
 * the script expects the output of `bin/console` to be in `LANG=en_US.UTF-8` or `en`
 * you can change the mail command from `-b ${siteadmin} -- ${usermail}` to `-- ${siteadmin}` and comment out all lines with `bin/console user delete` statement for testing runs
