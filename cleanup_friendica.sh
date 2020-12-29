@@ -1,4 +1,5 @@
 #!/bin/sh
+# v0.4   - "dry-run" release
 # v0.3.1 - "try to force Github to accept this change"-release
  
 set -f
@@ -13,8 +14,25 @@ set -f
 #sitefrom="no-reply@domain.tld"
 #protectedusers="admin1 admin2 admin3"
 
+case $1 in
+	"--dry-run")
+		mode="dryrun"
+		;;
+	"--dowhatimean")
+		mode="hotrun"
+		;;
+	*)
+		echo "Usage: "
+		echo " --dry-run \t: make a dry-run, no deletion will be done, no mails are sent."
+		echo " --dowhatimean \t: add this option if you really want to delete users."
+		exit 0
+		;;
+esac
+
 . /usr/local/etc/cleanup_friendica.conf
 
+# make a list to be used for grep -E 
+protected=$(echo $protectedusers | sed 's/\"//g' | sed 's/\ /\|/g')
 
 cd ${friendicapath} || exit 0
 
@@ -71,13 +89,17 @@ for username in $( ${friendicapath}/bin/console user list active -c 10000 | grep
 		done
 		if [ ${pcheck} -eq 0 ]; then
 			echo "Delete unconfirmed user ${username}"
-			${friendicapath}/bin/console user delete "${username}" -y
+			if [ "${mode}" = "hotrun" ]; then
+				${friendicapath}/bin/console user delete "${username}" -y
+			elif [ "${mode}" = "dryrun" ]; then
+				echo "${username}: skipped because of dryrun."
+			fi
 		fi
 	fi
 done
 
 # find & notify users that didn't logged in >6 months and send mail to log in again
-for u in $( ${friendicapath}/bin/console user list active -c 10000 | grep -v '.*---.*' | sed 's/|/;/g' | tr  -s "\ " | sed 's/^;\ //g' | sed 's/\ ;\ /;/g' | sed 's/\ /_/g' | tail -n +2 ); do 
+for u in $( ${friendicapath}/bin/console user list active -c 10000 | grep -v '.*---.*' | sed 's/|/;/g' | tr  -s "\ " | sed 's/^;\ //g' | sed 's/\ ;\ /;/g' | sed 's/\ /_/g' | tail -n +2 | grep -i -v -E ${protected} ); do 
 	username=$(echo "${u}" | awk -F ";" '{print $1}')
 	dispname=$(echo "${u}" | awk -F ";" '{print $2}')
 	profileurl=$(echo "${u}"| awk -F ";" '{print $3}')
@@ -95,7 +117,12 @@ for u in $( ${friendicapath}/bin/console user list active -c 10000 | grep -v '.*
 	    	elif [ ${num_months} -eq 6 ]; then 
     			# mail the user and ask to re-login
 		    	DELUSER=false
-    			notifyUser
+				if [ "${mode}" = "hotrun" ]; then
+					#echo -n "hotrun  "
+    				notifyUser
+				elif [ "${mode}" = "dryrun" ]; then
+					echo "Check ${username}: notify skipped because of dryrun."
+				fi
 	    	fi
 	    elif [ "${monthyear}" = "year" ]; then
 	    	DELUSER=true
@@ -113,9 +140,15 @@ for u in $( ${friendicapath}/bin/console user list active -c 10000 | grep -v '.*
 					fi
 				done
 				if [ ${pcheck} -eq 0 ]; then
-					echo "Delete user ${username}"
-					${friendicapath}/bin/console user delete "${username}" -y
-					notifyUserDeletion
+					echo -n "Deleting user ${username}... "
+					if [ "${mode}" = "hotrun" ]; then
+						#echo -n "hotrun  "
+						${friendicapath}/bin/console user delete "${username}" -y
+						notifyUserDeletion
+						echo "deleted."
+					elif [ "${mode}" = "dryrun" ]; then
+						echo "skipped because of dryrun."
+					fi
 				fi
 			fi
 		fi
