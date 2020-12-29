@@ -32,7 +32,7 @@ esac
 . /usr/local/etc/cleanup_friendica.conf
 
 # make a list to be used for grep -E 
-protected=$(echo $protectedusers | sed 's/\"//g' | sed 's/\ /\|/g')
+protected=$(echo $protectedusers | sed 's/\"//g' | sed 's/\ /\\\|/g')
 
 cd ${friendicapath} || exit 0
 
