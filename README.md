@@ -13,9 +13,10 @@ The script does two things:
 * change the variables at the begin of the script to your site settings. 
 
 # Usage
-`Usage:
+```Usage:
  --dry-run      : make a dry-run, no deletion will be done, no mails are sent.
- --dowhatimean  : add this option if you really want to delete users.`
+ --dowhatimean  : add this option if you really want to delete users.
+ ```
 
 # Other useful tips
 * the script expects the output of `bin/console` to be in `LANG=en_US.UTF-8` or `en`
